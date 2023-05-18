@@ -1,7 +1,7 @@
 { config, pkgs, ... }:
 
 let 
-    swaybarCommand = "while echo \"bat: $(cat /sys/class/power_supply/BAT0/capacity)% / bri: $(brightnessctl | grep % | cut -d'(' -f2 | cut -d')' -f1) / vol: $(pamixer --get-volume-human) / $(date +'%F %T')\"; do sleep 0.01; done";
+    swaybarCommand = "while echo \"bat: $(cat /sys/class/power_supply/BAT0/capacity)% / $(date +'%F %T')\"; do sleep 0.01; done";
     bemenuCommand = "bemenu-run -p '' -b --fn \"JetBrainsMono Nerd Font Semibold 12\" --tb \"#000000\" --tf \"#FFFFFF\" --fb \"#000000\" --ff \"#FFFFFF\" --nb \"#000000\" --nf \"#666666\" --hb \"#000000\" --hf \"#FFFFFF\" --sb \"#000000\" --hf \"#FFFFFF\"";
 in
 
@@ -97,7 +97,7 @@ in
     };
     profileExtra = ''
       if [ -z "$WAYLAND_DISPLAY" ] && [ "$XDG_VTNR" -eq 1 ]; then
-        exec sway --unsupported-gpu &>/dev/null
+        exec sway &>/dev/null
       fi
     '';
   };
@@ -202,6 +202,7 @@ in
         { command = "autotiling-rs"; }
         { command = "wl-paste -t text --watch clipman store --no-persist"; }
         { command = "brightnessctl --device=asus::kbd_backlight s 3+"; }
+        { command = "sabnzbd"; }
       ];
       modes = {
         resize = {
@@ -251,19 +252,19 @@ in
           "Mod1+f" = "fullscreen";
           "Mod1+Tab" = "workspace next";
           "Mod1+Shift+Tab" = "workspace prev";
-          "F1" = "exec wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle";
-          "XF86AudioLowerVolume" = "exec wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.01-";
-          "XF86AudioRaiseVolume" = "exec wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.01+";
-          "XF86AudioMicMute" = "exec wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle && exec wpctl set-volume @DEFAULT_AUDIO_SOURCE@ 27%";
+          "F1" = "exec wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle && dunstify -r 991050 \"vol:$(wpctl get-volume @DEFAULT_AUDIO_SINK@ | cut -d':' -f2)\"";
+          "XF86AudioLowerVolume" = "exec wpctl set-mute @DEFAULT_AUDIO_SINK@ 0 && wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.01- && dunstify -r 991050 \"vol:$(wpctl get-volume @DEFAULT_AUDIO_SINK@ | cut -d':' -f2)\"";
+          "XF86AudioRaiseVolume" = "exec wpctl set-mute @DEFAULT_AUDIO_SINK@ 0 && wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.01+ && dunstify -r 991050 \"vol:$(wpctl get-volume @DEFAULT_AUDIO_SINK@ | cut -d':' -f2)\"";
+          "XF86AudioMicMute" = "exec wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle && wpctl set-volume @DEFAULT_AUDIO_SOURCE@ 30% && dunstify -r 991050 \"mic:$(wpctl get-volume @DEFAULT_AUDIO_SOURCE@ | cut -d':' -f2)\"";
           "F2" = "exec brightnessctl --device=\"asus::kbd_backlight\" s 1-";
           "F3" = "exec brightnessctl --device=\"asus::kbd_backlight\" s 1+";
           "Mod1+F2" = "exec asusctl led-mode -p";
           "Mod1+F3" = "exec asusctl led-mode -n";
-          "F7" = "exec brightnessctl s 1%-";
-          "F8" = "exec brightnessctl s 1%+";
-          "F5" = "exec playerctl play-pause";
-          "F4" = "exec playerctl previous";
-          "F6" = "exec playerctl next";
+          "F7" = "exec brightnessctl s 1%- && dunstify -r 991051 \"bri: $(brightnessctl | grep % | cut -d'(' -f2 | cut -d')' -f1)\"";
+          "F8" = "exec brightnessctl s 1%+ && dunstify -r 991051 \"bri: $(brightnessctl | grep % | cut -d'(' -f2 | cut -d')' -f1)\"";
+          "F5" = "exec playerctl play-pause && dunstify -r 991052 \"$(playerctl metadata xesam:artist) - $(playerctl metadata xesam:title)\"";
+          "F4" = "exec playerctl previous && dunstify -r 991052 \"$(playerctl metadata xesam:artist) - $(playerctl metadata xesam:title)\"";
+          "F6" = "exec playerctl next && dunstify -r 991052 \"$(playerctl metadata xesam:artist) - $(playerctl metadata xesam:title)\"";
           "Mod1+Shift+f" = "exec firefox";
           "Mod1+t" = "exec thunderbird";
           "Mod1+z" = "exec zathura";

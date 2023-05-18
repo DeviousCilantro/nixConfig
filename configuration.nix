@@ -41,10 +41,6 @@
       enable = true;
       driSupport = true;
     };
-    nvidia = {
-      modesetting.enable = true;
-      powerManagement.enable = true;
-    };
   };
 
   environment = { 
@@ -71,12 +67,12 @@
       go
       grim
       htop
+      libnotify
       mpv
       neofetch
       neovim
       oh-my-zsh
       openjdk19
-      pamixer
       parted
       pass-wayland
       passExtensions.pass-import
@@ -147,7 +143,6 @@
     openssh.enable = false;
     tlp.enable = true;
     dbus.enable = true;
-    xserver.videoDrivers = [ "nvidia" ];
   };
 
 
