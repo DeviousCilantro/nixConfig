@@ -63,7 +63,6 @@
       element-desktop
       feh
       firefox-wayland
-      flatpak
       foot
       gcc
       git
@@ -84,6 +83,7 @@
       pavucontrol
       pinentry
       playerctl
+      plex-media-player
       powertop
       pwgen
       rsync
@@ -110,7 +110,6 @@
         "/etc/nixos"
         "/etc/NetworkManager"
         "/etc/modprobe.d"
-        "/var/lib/flatpak"
       ];
     };
     binsh = "${pkgs.dash}/bin/dash";
@@ -149,7 +148,6 @@
     tlp.enable = true;
     dbus.enable = true;
     xserver.videoDrivers = [ "nvidia" ];
-    flatpak.enable = true;
   };
 
 

@@ -99,7 +99,6 @@ in
       if [ -z "$WAYLAND_DISPLAY" ] && [ "$XDG_VTNR" -eq 1 ]; then
         exec sway --unsupported-gpu &>/dev/null
       fi
-      export XDG_DATA_DIRS=$XDG_DATA_DIRS:/usr/share:/var/lib/flatpak/exports/share:$HOME/.local/share/flatpak/exports/share
     '';
   };
 
@@ -268,6 +267,7 @@ in
           "Mod1+Shift+f" = "exec firefox";
           "Mod1+t" = "exec thunderbird";
           "Mod1+z" = "exec zathura";
+          "Mod1+Shift+p" = "exec plexmediaplayer";
           "F11" = "exec swaylock -f -c 000000 && systemctl suspend";
           "Print" = "exec grim -g \"$(slurp)\" $(date +'%F_%T.png')";
           "Mod1+h" = "focus left";
