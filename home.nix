@@ -9,125 +9,290 @@ in
   home.username = "archisman";
   home.homeDirectory = "/home/archisman";
 
-  programs.git = {
-    enable = true;
-    userName = "DeviousCilantro";
-    userEmail = "archisman@mailbox.org";
-  };
-
-  programs.foot = {
-    enable = true;
-    settings = {
-      main = {
-        term = "xterm-256color";
-        font = "JetBrainsMono Nerd Font:size=7.5:style=Semibold";
-        dpi-aware = "yes";
-      };
-      mouse = {
-        hide-when-typing = "yes";
-      };
-      colors = {
-        alpha = 0.8;
-        foreground = "ffffff";
-        background = "000000";
-      };
-    };
-  };
-
-  programs.neovim = {
-    enable = true;
-    defaultEditor = true;
-    extraConfig = ''
-      set nocompatible
-      filetype on
-      filetype plugin on
-      filetype indent on
-      syntax enable
-      set number
-      colorscheme elflord
-      set nohlsearch
-      set shiftwidth=2
-      set tabstop=2
-      set expandtab
-      set nobackup
-      set scrolloff=10
-      set wrap
-      set incsearch
-      set ignorecase
-      set smartcase
-      set showcmd
-      set showmode
-      set showmatch
-      set history=1000
-      set wildmenu
-      set wildmode=list:longest
-      set wildignore=*.docx,*.jpg,*.png,*.gif,*.pdf,*.pyc,*.exe,*.flv,*.img,*.xlsx
-      set statusline=
-      set statusline+=%#LineNr#
-      set statusline+=\ %F\ %M\ %Y\ %R
-      set statusline+=%=
-      set statusline+=\ %p%%
-      set laststatus=2
-      filetype plugin indent on
-      packloadall
-      silent! helptags ALL
-      let g:ale_linters = {'rust': ['analyzer']}
-      inoremap <C-l> <c-g>u<Esc>[s1z=`]a<c-g>u
-    '';
-  };
-
-  programs.zsh = {
-    enable = true;
-    enableAutosuggestions = true;
-    enableCompletion = true;
-    enableSyntaxHighlighting = true;
-    autocd = true;
-    defaultKeymap = "viins";
-    shellAliases = {
-        vi = "nvim";
-        suvi = "doas nvim";
-        vpsup="nmcli connection up vps";
-        vpsdown="nmcli connection down vps";
-        update = "doas nixos-rebuild switch";
-    };
-    oh-my-zsh = {
+  programs = {
+    home-manager.enable = true;
+    
+    firefox = {
       enable = true;
-      plugins = [ "git" ];
-      theme = "lambda";
-    };
-    profileExtra = ''
-      if [ -z "$WAYLAND_DISPLAY" ] && [ "$XDG_VTNR" -eq 1 ]; then
-        exec sway &>/dev/null
-      fi
-    '';
-  };
+      profiles = {
+        profile = {
+          extensions = with pkgs.nur.repos.rycee.firefox-addons; [
+              ublock-origin
+              bitwarden
+              darkreader
+          ];
+          settings = {
+            "toolkit.legacyUserProfileCustomizations.stylesheets" = true;
+            "datareporting.healthreport.service.enabled" = false;
+            "datareporting.healthreport.uploadEnabled" = false;
+            "datareporting.policy.dataSubmissionEnabled" = false;
+            "browser.ping-centre.telemetry" = false;
+            "browser.contentblocking.category" = "strict";
+            "browser.onboarding.enabled" = false;
+            "toolkit.telemetry.archive.enabled" = false;
+            "toolkit.telemetry.bhrPing.enabled" = false;
+            "toolkit.telemetry.enabled" = false;
+            "toolkit.telemetry.firstShutdownPing.enabled" = false;
+            "toolkit.telemetry.newProfilePing.enabled" = false;
+            "toolkit.telemetry.reportingpolicy.firstRun" = false;
+            "toolkit.telemetry.shutdownPingSender.enabled" = false;
+            "toolkit.telemetry.unified" = false;
+            "toolkit.telemetry.updatePing.enabled" = false;
+            "toolkit.telemetry.cachedClientID" = "";
+            "experiments.enabled" = false;
+            "experiments.activeExperiment" = false;
+            "experiments.supported" = false;
+            "network.allow-experiments" = false;
+            "extensions.shield-recipe-client.enabled" = false;
+            "extensions.shield-recipe-client.user_id" = "";
+            "extensions.shield-recipe-client.api_url" = "";
+            "extensions.formautofill.creditCards.enabled" = false;
+            "dom.forms.autocomplete.formautofill" = false;
+            "app.normandy.enabled" = false;
+            "app.normandy.api_url" = "";
+            "app.shield.optoutstudies.enabled" = false;
+            "permissions.default.desktop-notification" = 2;
+            "browser.aboutConfig.showWarning" =  false;
+            "browser.startup.page" = 0;
+            "browser.startup.homepage" = "about:blank";
+            "browser.newtabpage.enabled" = false;
+            "browser.toolbars.bookmarks.visibility" = "never";
+            "browser.newtabpage.activity-stream.showSponsored" = false;
+            "browser.newtabpage.activity-stream.showSponsoredTopSites" = false;
+            "browser.newtabpage.activity-stream.default.sites" = "";
+            "intl.accept_languages" = "en-US";
+            "javascript.use_us_english_locale" = true;
+            "extensions.getAddons.showPane" = false;
+            "extensions.htmlaboutaddons.recommendations.enabled" = false;
+            "toolkit.telemetry.coverage.opt-out" = true;
+            "toolkit.coverage.opt-out" = true;
+            "toolkit.coverage.endpoint.base" = "";
+            "browser.newtabpage.activity-stream.feeds.telemetry" = false;
+            "browser.newtabpage.activity-stream.telemetry" = false;
+            "breakpad.reportURL" = "";
+            "browser.tabs.crashReporting.sendReport" = false;
+            "browser.safebrowsing.downloads.remote.enabled" = false;
+            "network.prefetch-next" = false;
+            "network.dns.disablePrefetch" = false;
+            "network.predictor.enabled" = false;
+            "network.predictor.enable-prefetch" = false;
+            "network.http.speculative-parallel-limit" = 0;
+            "browser.places.speculativeConnect.enabled" = false;
+            "network.dns.disableIPv6" = true;
+            "browser.urlbar.speculativeConnect.enabled" = false;
+            "browser.urlbar.dnsResolveSingleWordsAfterSearch" = 0;
+            "browser.urlbar.suggest.quicksuggest.nonsponsored" = false;
+            "browser.urlbar.suggest.quicksuggest.sponsored" = false;
+            "browser.formfill.enable" = false;
+            "signon.autofillForms" = false;
+            "signon.formlessCapture.enabled" = false;
+            "network.auth.subresource-http-auth-allow" = 1;
+            "browser.cache.disk.enable" = false;
+            "browser.privatebrowsing.forceMediaMemoryCache" = true;
+            "media.memory_cache_max_size" = 65536;
+            "browser.sessionstore.privacy_level" = 2;
+            "toolkit.winRegisterApplicationRestart" = false;
+            "browser.shell.shortcutFavicons" = false;
+            "security.ssl.require_safe_negotiation" = true;
+            "security.tls.enable_0rtt_data" = false;
+            "security.OCSP.require" = true;
+            "security.cert_pinning.enforcement_level" = 2;
+            "security.remote_settings.crlite_filters.enabled" = true;
+            "security.pki.crlite_mode" = 2;
+            "dom.security.https_only_mode" = true;
+            "dom.security.https_only_mode_send_http_background_request" = false;
+            "security.ssl.treat_unsafe_negotiation_as_broken" = true;
+            "browser.xul.error_pages.expert_bad_cert" = true;
+            "privacy.userContext.enabled" = true;
+            "privacy.userContext.ui.enabled" = true;
+            "media.peerconnection.ice.proxy_only_if_behind_proxy" = true;
+            "media.peerconnection.ice.default_address_only" = true;
+            "media.eme.enabled" = false;
+            "dom.disable_window_move_resize" = true;
+            "accessibility.force_disabled" = 1;
+            "browser.helperApps.deleteTempFileOnExit" = true;
+            "browser.uitour.enabled" = false;
+            "network.IDN_show_punycode" = true;
+            "browser.download.useDownloadDir" = false;
+            "browser.download.alwaysOpenPanel" = false;
+            "browser.download.manager.addToRecentDocs" = false;
+            "browser.download.always_ask_before_handling_new_types" = true;
+            "privacy.sanitize.sanitizeOnShutdown" = true;
+            "privacy.clearOnShutdown.cache" = true;
+            "privacy.clearOnShutdown.downloads" = true;
+            "privacy.clearOnShutdown.formdata" = true;
+            "privacy.clearOnShutdown.history" = true;
+            "privacy.clearOnShutdown.sessions" = true;
+            "privacy.clearOnShutdown.cookies" = true;
+            "privacy.clearOnShutdown.offlineApps" = true;
+            "privacy.sanitize.timeSpan" = 0;
+            "browser.startup.homepage_override.mstone" = "ignore";
+            "browser.newtabpage.activity-stream.asrouter.userprefs.cfr.addons" = false;
+            "browser.newtabpage.activity-stream.asrouter.userprefs.cfr.features" = false;
+            "browser.messaging-system.whatsNewPanel.enabled" = false;
+            "browser.urlbar.showSearchTerms.enabled" = false;
+            "extensions.pocket.enabled" = false;
+            "extensions.unifiedExtensions.enabled" = false;
+            "keyword.enabled" = true;
+          };
+          search = {
+            engines = {
+              "Whoogle" = {
+                urls = [{ template = "https://whoogle.zxyno.xyz/search?q={searchTerms}"; }];
+              };
+              "Nix Packages" = {
+                urls = [{
+                  template = "https://search.nixos.org/packages?channel=unstable&from=0&size=50&sort=relevance&type=packages&query={searchTerms}";
+                }];
 
-  services.dunst = {
-    enable = true;
-    settings = {
-      global = {
-        width = "(0, 1500)";
-        height = 300;
-        offset = "10x50";
-        origin = "top-right";
-        transparency = 0;
-        frame_color = "#282828";
-        font = "JetBrainsMono Nerd Font Semibold 12";
+                icon = "${pkgs.nixos-icons}/share/icons/hicolor/scalable/apps/nix-snowflake.svg";
+                definedAliases = [ "@np" ];
+              };
+              "NixOS Wiki" = {
+                urls = [{ template = "https://nixos.wiki/index.php?search={searchTerms}"; }];
+                iconUpdateURL = "https://nixos.wiki/favicon.png";
+                updateInterval = 24 * 60 * 60 * 1000;
+                definedAliases = [ "@nw" ];
+              };
+            };
+            force = true;
+            default = "Whoogle";
+          };
+          userChrome =
+          ''
+            #navigator-toolbox { font-family:JetBrainsMono Nerd Font !important }
+          '';
+          userContent = 
+          ''
+            *{scrollbar-width:none !important}
+          '';
+        };
       };
-      urgency_normal = {
-        background = "#000000";
-        foreground = "#ffffff";
-        timeout = 2;
+    };
+
+    foot = {
+      enable = true;
+      settings = {
+        main = {
+          term = "xterm-256color";
+          font = "JetBrainsMono Nerd Font:size=7.5:style=Semibold";
+          dpi-aware = "yes";
+        };
+        mouse = {
+          hide-when-typing = "yes";
+        };
+        colors = {
+          alpha = 0.8;
+          foreground = "ffffff";
+          background = "000000";
+        };
       };
-      urgency_low = {
-        background = "#000000";
-        foreground = "#ffffff";
-        timeout = 2;
+    };
+
+    git = {
+      enable = true;
+      userName = "DeviousCilantro";
+      userEmail = "archisman@mailbox.org";
+    };
+
+    neovim = {
+      enable = true;
+      defaultEditor = true;
+      extraConfig = ''
+        set nocompatible
+        filetype on
+        filetype plugin on
+        filetype indent on
+        syntax enable
+        set number
+        colorscheme elflord
+        set nohlsearch
+        set shiftwidth=2
+        set tabstop=2
+        set expandtab
+        set nobackup
+        set scrolloff=10
+        set wrap
+        set incsearch
+        set ignorecase
+        set smartcase
+        set showcmd
+        set showmode
+        set showmatch
+        set history=1000
+        set wildmenu
+        set wildmode=list:longest
+        set wildignore=*.docx,*.jpg,*.png,*.gif,*.pdf,*.pyc,*.exe,*.flv,*.img,*.xlsx
+        set statusline=
+        set statusline+=%#LineNr#
+        set statusline+=\ %F\ %M\ %Y\ %R
+        set statusline+=%=
+        set statusline+=\ %p%%
+        set laststatus=2
+        filetype plugin indent on
+        packloadall
+        silent! helptags ALL
+        let g:ale_linters = {'rust': ['analyzer']}
+        inoremap <C-l> <c-g>u<Esc>[s1z=`]a<c-g>u
+      '';
+    };
+
+    zsh = {
+      enable = true;
+      enableAutosuggestions = true;
+      enableCompletion = true;
+      enableSyntaxHighlighting = true;
+      autocd = true;
+      defaultKeymap = "viins";
+      shellAliases = {
+          vi = "nvim";
+          suvi = "doas nvim";
+          vpsup="nmcli connection up vps";
+          vpsdown="nmcli connection down vps";
+          update = "doas nixos-rebuild switch --impure";
       };
-      urgency_critical = {
-        background = "#000000";
-        foreground = "#ffffff";
-        timeout = 2;
+      oh-my-zsh = {
+        enable = true;
+        plugins = [ "git" ];
+        theme = "lambda";
+      };
+      profileExtra = ''
+        if [ -z "$WAYLAND_DISPLAY" ] && [ "$XDG_VTNR" -eq 1 ]; then
+          exec sway &>/dev/null
+        fi
+      '';
+    };
+
+  };
+    
+  services = {
+    dunst = {
+      enable = true;
+      settings = {
+        global = {
+          width = "(0, 1500)";
+          height = 300;
+          offset = "10x50";
+          origin = "top-right";
+          transparency = 0;
+          frame_color = "#282828";
+          font = "JetBrainsMono Nerd Font Semibold 12";
+        };
+        urgency_normal = {
+          background = "#000000";
+          foreground = "#ffffff";
+          timeout = 2;
+        };
+        urgency_low = {
+          background = "#000000";
+          foreground = "#ffffff";
+          timeout = 2;
+        };
+        urgency_critical = {
+          background = "#000000";
+          foreground = "#ffffff";
+          timeout = 2;
+        };
       };
     };
   };
@@ -200,9 +365,7 @@ in
       seat = { "*" = { hide_cursor = "when-typing enable"; }; };
       startup = [
         { command = "autotiling-rs"; }
-        { command = "wl-paste -t text --watch clipman store --no-persist"; }
         { command = "brightnessctl --device=asus::kbd_backlight s 3+"; }
-        { command = "sabnzbd"; }
       ];
       modes = {
         resize = {
@@ -310,5 +473,4 @@ in
   };
 
   home.stateVersion = "22.11";
-  programs.home-manager.enable = true;
 }

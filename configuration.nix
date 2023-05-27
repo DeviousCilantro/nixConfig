@@ -1,5 +1,11 @@
 { config, pkgs, lib, ... }:
 
+let
+  my-python-packages = ps: with ps; [
+    numpy
+  ];
+in
+
 {
   imports =
     [
@@ -41,6 +47,7 @@
       enable = true;
       driSupport = true;
     };
+    enableRedistributableFirmware = true;
   };
 
   environment = { 
@@ -50,15 +57,15 @@
       brightnessctl
       btop
       cargo
-      chromium
-      clipman
+      cmus
       cryptsetup
       doas
-      dracula-theme
       dunst
+      easytag
       element-desktop
       feh
       firefox-wayland
+      flac
       foot
       gcc
       git
@@ -67,31 +74,27 @@
       go
       grim
       htop
-      libnotify
       mpv
       neofetch
       neovim
+      obs-studio
       oh-my-zsh
-      openjdk19
       parted
       pass-wayland
       passExtensions.pass-import
       pavucontrol
-      pinentry
       playerctl
-      plex-media-player
       powertop
       pwgen
       rsync
       rustc
-      sabnzbd
+      signal-desktop
       slurp
-      spotify
       sway
       swayidle
       swaylock
       thunderbird
-      tlp
+      tigervnc
       unzip
       wget
       wireguard-tools
@@ -123,12 +126,6 @@
     noto-fonts-cjk
   ];
 
-  nixpkgs.config.packageOverrides = pkgs: {
-    nur = import (builtins.fetchTarball "https://github.com/nix-community/NUR/archive/master.tar.gz") {
-      inherit pkgs;
-    };
-  };
-
   services = {
     zfs = {
       autoScrub.enable = true;
@@ -141,7 +138,6 @@
       pulse.enable = true;
     };
     openssh.enable = false;
-    tlp.enable = true;
     dbus.enable = true;
   };
 
@@ -174,8 +170,6 @@
     };
   };
 
-  nixpkgs.config.allowUnfree = true;
-
   security = {
     doas.enable = true;
     sudo.enable = false;
@@ -206,9 +200,22 @@
     };
   };
 
+  powerManagement = {
+    enable = true;
+    powertop.enable = true;
+    cpuFreqGovernor = "schedutil";
+  };
+
   xdg.portal = {
     enable = true;
     wlr.enable = true;
     extraPortals = [ pkgs.xdg-desktop-portal-gtk ];
   };
+
+  nixpkgs.config.packageOverrides = pkgs: {
+    nur = import (builtins.fetchTarball "https://github.com/nix-community/NUR/archive/master.tar.gz") {
+      inherit pkgs;
+    };
+  };
+
 }
