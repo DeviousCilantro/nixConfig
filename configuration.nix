@@ -52,11 +52,13 @@ in
 
   environment = { 
     systemPackages = with pkgs; [
+      autoconf
       autotiling-rs
       bemenu
       brightnessctl
       btop
       cargo
+      clippy
       cmus
       cryptsetup
       doas
@@ -79,6 +81,7 @@ in
       neovim
       obs-studio
       oh-my-zsh
+      om4
       parted
       pass-wayland
       passExtensions.pass-import
@@ -88,6 +91,7 @@ in
       pwgen
       rsync
       rustc
+      rust-analyzer
       signal-desktop
       slurp
       sway
@@ -139,6 +143,7 @@ in
     };
     openssh.enable = false;
     dbus.enable = true;
+    logind.lidSwitch = "ignore";
   };
 
 
