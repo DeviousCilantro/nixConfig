@@ -431,7 +431,6 @@ in
           "Mod1+Shift+f" = "exec firefox";
           "Mod1+t" = "exec thunderbird";
           "Mod1+z" = "exec zathura";
-          "Mod1+Shift+p" = "exec plexmediaplayer";
           "F11" = "exec swaylock -f -c 000000 && systemctl suspend";
           "Print" = "exec grim -g \"$(slurp)\" $(date +'%F_%T.png')";
           "Mod1+h" = "focus left";

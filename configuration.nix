@@ -1,11 +1,5 @@
 { config, pkgs, lib, ... }:
 
-let
-  my-python-packages = ps: with ps; [
-    numpy
-  ];
-in
-
 {
   imports =
     [
