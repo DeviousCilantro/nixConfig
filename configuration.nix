@@ -35,7 +35,6 @@
   };
 
   hardware = {
-    bluetooth.enable = true;
     pulseaudio.enable = false;
     opengl = {
       enable = true;
@@ -51,10 +50,9 @@
       bemenu
       brightnessctl
       btop
-      cargo
-      clippy
       cmus
       cryptsetup
+      dmenu-rs
       doas
       dunst
       easytag
@@ -71,20 +69,26 @@
       grim
       htop
       mpv
+      nasm
       neofetch
       neovim
+      nodejs_20
+      nvi
       obs-studio
       oh-my-zsh
       om4
+      openssl
+      pango
       parted
       pass-wayland
       passExtensions.pass-import
       pavucontrol
+      pkgconfig
       playerctl
       powertop
       pwgen
       rsync
-      rustc
+      rustup
       rust-analyzer
       signal-desktop
       slurp
@@ -94,9 +98,14 @@
       thunderbird
       tigervnc
       unzip
+      wezterm
       wget
       wireguard-tools
       wl-clipboard
+      xorg.libxcb
+      xorg.libX11
+      xorg.xmodmap
+      yarn
       zathura
       zsh
       zsh-autosuggestions
@@ -138,6 +147,10 @@
     openssh.enable = false;
     dbus.enable = true;
     logind.lidSwitch = "ignore";
+    xserver = {
+      enable = true;
+      displayManager.startx.enable = true;
+    };
   };
 
 
@@ -161,7 +174,7 @@
         isNormalUser = true;
         createHome = true;
         initialHashedPassword = "\$6\$yZm2shp6XSRMWUlm\$KiQ6p7km4IdwRE.btTQPI30QkCGwbQPJel46jwmSdyj5stRsCP2RVC73wL5NY8qLg0HMeTHDQ.Hze0MjmpAhA0";
-	    extraGroups = [ "wheel" "networkmanager" ];
+	    extraGroups = [ "wheel" "networkmanager" "docker" ];
 	    uid = 1000;
 	    home = "/home/archisman";
 	    useDefaultShell = true;
@@ -205,6 +218,8 @@
     cpuFreqGovernor = "schedutil";
   };
 
+  virtualisation.docker.enable = true;
+  
   xdg.portal = {
     enable = true;
     wlr.enable = true;

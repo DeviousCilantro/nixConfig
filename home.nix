@@ -51,6 +51,8 @@ in
             "app.normandy.enabled" = false;
             "app.normandy.api_url" = "";
             "app.shield.optoutstudies.enabled" = false;
+            "geo.provider.use_geoclue" = false;
+            "permissions.delegation.enabled" = false;
             "permissions.default.desktop-notification" = 2;
             "browser.aboutConfig.showWarning" =  false;
             "browser.startup.page" = 0;
@@ -162,10 +164,6 @@ in
           ''
             #navigator-toolbox { font-family:JetBrainsMono Nerd Font !important }
           '';
-          userContent = 
-          ''
-            *{scrollbar-width:none !important}
-          '';
         };
       };
     };
@@ -232,7 +230,7 @@ in
         filetype plugin indent on
         packloadall
         silent! helptags ALL
-        let g:ale_linters = {'rust': ['analyzer']}
+        "let g:ale_linters = {'rust': ['analyzer']}
         inoremap <C-l> <c-g>u<Esc>[s1z=`]a<c-g>u
       '';
     };
@@ -245,8 +243,7 @@ in
       autocd = true;
       defaultKeymap = "viins";
       shellAliases = {
-          vi = "nvim";
-          suvi = "doas nvim";
+          vi="nvim";
           vpsup="nmcli connection up vps";
           vpsdown="nmcli connection down vps";
           update = "doas nixos-rebuild switch --impure";
@@ -256,6 +253,9 @@ in
         plugins = [ "git" ];
         theme = "lambda";
       };
+      sessionVariables = {
+        PATH = "/home/archisman/.cargo/bin:$PATH";
+        };
       profileExtra = ''
         if [ -z "$WAYLAND_DISPLAY" ] && [ "$XDG_VTNR" -eq 1 ]; then
           exec sway &>/dev/null
