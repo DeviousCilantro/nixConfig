@@ -1,7 +1,7 @@
 { config, pkgs, ... }:
 
 let 
-    swaybarCommand = "while echo \"bat: $(cat /sys/class/power_supply/BAT0/capacity)% / $(date +'%F %T')\"; do sleep 0.01; done";
+    swaybarCommand = "while echo \"bat: $(cat /sys/class/power_supply/BAT0/capacity)% / $(date +'%F %T')\"; do sleep 1s; done";
     bemenuCommand = "bemenu-run -p '' -b --fn \"JetBrainsMono Nerd Font Semibold 12\" --tb \"#000000\" --tf \"#FFFFFF\" --fb \"#000000\" --ff \"#FFFFFF\" --nb \"#000000\" --nf \"#666666\" --hb \"#000000\" --hf \"#FFFFFF\" --sb \"#000000\" --hf \"#FFFFFF\"";
 in
 
@@ -246,7 +246,7 @@ in
           vi="nvim";
           vpsup="nmcli connection up vps";
           vpsdown="nmcli connection down vps";
-          update = "doas nixos-rebuild switch --impure";
+          update = "doas nixos-rebuild switch --impure --upgrade --flake /etc/nixos#laptop";
       };
       oh-my-zsh = {
         enable = true;
@@ -306,6 +306,7 @@ in
       output = {
         "*" = {
           bg = "#000000 solid_color";
+          mode = "1920x1200@165.015Hz";
         };
       };
       input = {
@@ -366,6 +367,7 @@ in
       startup = [
         { command = "autotiling-rs"; }
         { command = "brightnessctl --device=asus::kbd_backlight s 3+"; }
+        #{ command = "echo AMDI0010:01 | doas tee /sys/bus/platform/drivers/i2c_designware/unbind"; }
       ];
       modes = {
         resize = {

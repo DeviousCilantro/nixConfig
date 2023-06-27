@@ -1,0 +1,334 @@
+#!/usr/bin/env bash
+
+# Original https://gist.github.com/mx00s/ea2462a3fe6fdaa65692fe7ee824de3e
+#
+# NixOS install script synthesized from:
+#
+#   - Erase Your Darlings (https://grahamc.com/blog/erase-your-darlings)
+#   - ZFS Datasets for NixOS (https://grahamc.com/blog/nixos-on-zfs)
+#   - NixOS Manual (https://nixos.org/nixos/manual/)
+#
+# It expects the name of the block device (e.g. 'sda') to partition
+# and install NixOS on and an authorized public ssh key to log in as
+# 'root' remotely. The script must also be executed as root.
+#
+
+set -euo pipefail
+
+################################################################################
+
+export COLOR_RESET="\033[0m"
+export RED_BG="\033[41m"
+export BLUE_BG="\033[44m"
+
+function err {
+    echo -e "${RED_BG}$1${COLOR_RESET}"
+}
+
+function info {
+    echo -e "${BLUE_BG}$1${COLOR_RESET}"
+}
+
+################################################################################
+
+export DISK=nvme0n1
+export AUTHORIZED_SSH_KEY='ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJSijCxEDwfZY6qXmdWpG6gh8HnVJLpsjCM0cmt67a5f archisman@laptop'
+
+if ! [[ -v DISK ]]; then
+    err "Missing argument. Expected block device name, e.g. 'sda'"
+    exit 1
+fi
+
+export DISK_PATH="/dev/${DISK}"
+
+if ! [[ -b "$DISK_PATH" ]]; then
+    err "Invalid argument: '${DISK_PATH}' is not a block special file"
+    exit 1
+fi
+
+if ! [[ -v AUTHORIZED_SSH_KEY ]]; then
+    err "Missing argument. Expected public SSH key, e.g. 'ssh-rsa AAAAB...'"
+    exit 1
+fi
+
+if [[ "$EUID" > 0 ]]; then
+    err "Must run as root"
+    exit 1
+fi
+
+export ZFS_POOL="rpool"
+
+# encrypted parent dataset
+export ZFS_DS_ENC="${ZFS_POOL}/encrypted"
+
+# ephemeral datasets
+export ZFS_LOCAL="${ZFS_DS_ENC}/local"
+export ZFS_DS_ROOT="${ZFS_LOCAL}/root"
+export ZFS_DS_NIX="${ZFS_LOCAL}/nix"
+
+# persistent datasets
+export ZFS_SAFE="${ZFS_DS_ENC}/safe"
+export ZFS_DS_HOME="${ZFS_SAFE}/home"
+export ZFS_DS_PERSIST="${ZFS_SAFE}/persist"
+
+export ZFS_BLANK_SNAPSHOT="${ZFS_DS_ROOT}@blank"
+
+################################################################################
+
+info "Running the UEFI (GPT) partitioning and formatting directions from the NixOS manual ..."
+export DISK_PART_ROOT="${DISK_PATH}p7"
+export DISK_PART_BOOT="${DISK_PATH}p1"
+
+info "Creating '$ZFS_POOL' ZFS pool for '$DISK_PART_ROOT' ..."
+zpool create -f "$ZFS_POOL" "$DISK_PART_ROOT"
+
+info "Enabling compression for '$ZFS_POOL' ZFS pool ..."
+zfs set compression=on "$ZFS_POOL"
+
+info "Creating '$ZFS_DS_ENC' ZFS dataset ..."
+zfs create -p -o mountpoint=legacy -o encryption=aes-256-gcm -o keyformat=passphrase -o keylocation=prompt "$ZFS_DS_ENC"
+
+info "Creating '$ZFS_DS_ROOT' ZFS dataset ..."
+zfs create -p -o mountpoint=legacy "$ZFS_DS_ROOT"
+
+info "Configuring extended attributes setting for '$ZFS_DS_ROOT' ZFS dataset ..."
+zfs set xattr=sa "$ZFS_DS_ROOT"
+
+info "Configuring access control list setting for '$ZFS_DS_ROOT' ZFS dataset ..."
+zfs set acltype=posixacl "$ZFS_DS_ROOT"
+
+info "Creating '$ZFS_BLANK_SNAPSHOT' ZFS snapshot ..."
+zfs snapshot "$ZFS_BLANK_SNAPSHOT"
+
+info "Mounting '$ZFS_DS_ROOT' to /mnt ..."
+mount -t zfs "$ZFS_DS_ROOT" /mnt
+
+info "Mounting '$DISK_PART_BOOT' to /mnt/boot ..."
+mkdir /mnt/boot
+mount -t vfat "$DISK_PART_BOOT" /mnt/boot
+
+info "Creating '$ZFS_DS_NIX' ZFS dataset ..."
+zfs create -p -o mountpoint=legacy "$ZFS_DS_NIX"
+
+info "Disabling access time setting for '$ZFS_DS_NIX' ZFS dataset ..."
+zfs set atime=off "$ZFS_DS_NIX"
+
+info "Mounting '$ZFS_DS_NIX' to /mnt/nix ..."
+mkdir /mnt/nix
+mount -t zfs "$ZFS_DS_NIX" /mnt/nix
+
+info "Creating '$ZFS_DS_HOME' ZFS dataset ..."
+zfs create -p -o mountpoint=legacy "$ZFS_DS_HOME"
+
+info "Mounting '$ZFS_DS_HOME' to /mnt/home ..."
+mkdir /mnt/home
+mount -t zfs "$ZFS_DS_HOME" /mnt/home
+
+info "Creating '$ZFS_DS_PERSIST' ZFS dataset ..."
+zfs create -p -o mountpoint=legacy "$ZFS_DS_PERSIST"
+
+info "Mounting '$ZFS_DS_PERSIST' to /mnt/persist ..."
+mkdir /mnt/persist
+mount -t zfs "$ZFS_DS_PERSIST" /mnt/persist
+
+info "Permit ZFS auto-snapshots on ${ZFS_SAFE}/* datasets ..."
+zfs set com.sun:auto-snapshot=true "$ZFS_DS_HOME"
+zfs set com.sun:auto-snapshot=true "$ZFS_DS_PERSIST"
+
+info "Creating persistent directory for host SSH keys ..."
+mkdir -p /mnt/persist/etc/ssh
+
+info "Generating NixOS configuration (/mnt/etc/nixos/*.nix) ..."
+nixos-generate-config --root /mnt
+
+info "Enter password for the root user ..."
+ROOT_PASSWORD_HASH="$(mkpasswd -m sha-512 | sed 's/\$/\\$/g')"
+
+info "Enter personal user name ..."
+read USER_NAME
+
+info "Enter password for '${USER_NAME}' user ..."
+USER_PASSWORD_HASH="$(mkpasswd -m sha-512 | sed 's/\$/\\$/g')"
+
+info "Moving generated hardware-configuration.nix to /persist/etc/nixos/ ..."
+mkdir -p /mnt/persist/etc/nixos
+mv /mnt/etc/nixos/hardware-configuration.nix /mnt/persist/etc/nixos/
+
+info "Backing up the originally generated configuration.nix to /persist/etc/nixos/configuration.nix.original ..."
+mv /mnt/etc/nixos/configuration.nix /mnt/persist/etc/nixos/configuration.nix.original
+
+info "Backing up the this installer script to /persist/etc/nixos/install.sh.original ..."
+cp "$0" /mnt/persist/etc/nixos/install.sh.original
+
+info "Writing NixOS configuration to /persist/etc/nixos/ ..."
+cat <<EOF > /mnt/persist/etc/nixos/configuration.nix
+{ config, pkgs, lib, ... }:
+
+{
+  imports =
+    [
+      ./hardware-configuration.nix
+    ];
+
+  nix.nixPath =
+    [
+      "nixpkgs=/nix/var/nix/profiles/per-user/root/channels/nixos"
+      "nixos-config=/persist/etc/nixos/configuration.nix"
+      "/nix/var/nix/profiles/per-user/root/channels"
+    ];
+
+  # Use the systemd-boot EFI boot loader.
+  boot.loader.systemd-boot.enable = true;
+  boot.loader.efi.canTouchEfiVariables = true;
+  boot.kernelPatches = [
+    {
+      name = "Fix keyboard issue";
+      patch = ./mypatch.patch;
+    }
+  ];
+  boot.kernelPackages = pkgs.linuxPackages_latest;
+  boot.kernelParams = [ "amdgpu.sg_display=0" ];
+
+  # source: https://grahamc.com/blog/erase-your-darlings
+  boot.initrd.postDeviceCommands = lib.mkAfter ''
+    zfs rollback -r ${ZFS_BLANK_SNAPSHOT}
+  '';
+
+  networking.hostId = "$(head -c 8 /etc/machine-id)";
+  networking.hostName = "nixos";
+  networking.networkmanager.enable = true;
+
+  environment = {
+    systemPackages = with pkgs; [
+      vim
+      wget
+      neofetch
+      firefox
+      cryptsetup
+      zsh
+      git
+      sway
+      foot
+      dunst
+      bemenu
+      brightnessctl
+      htop
+      doas
+      pavucontrol
+      thunderbird
+      zathura
+      xorg.xf86videoamdgpu
+      alacritty
+    ];
+    sessionVariables = {
+      DRI_PRIME = "1";
+    };
+  };
+
+  fonts.fonts = with pkgs;
+    [
+      jetbrains-mono
+      noto-fonts
+      noto-fonts-cjk
+      noto-fonts-emoji
+    ];
+
+  services.zfs = {
+    autoScrub.enable = true;
+    autoSnapshot.enable = true;
+  };
+
+  time.timeZone = "Asia/Kolkata";
+
+  i18n.defaultLocale = "en_US.UTF-8";
+
+  programs.sway.enable = true;
+
+  sound.enable = true;
+  hardware.pulseaudio.enable = false;
+  security.rtkit.enable = true;
+  services.pipewire = {
+    enable = true;
+    alsa.enable = true;
+    alsa.support32Bit = true;
+    pulse.enable = true;
+    # If you want to use JACK applications, uncomment this
+    #jack.enable = true;
+
+    # use the example session manager (no others are packaged yet so this is enabled by default,
+    # no need to redefine it in your config for now)
+    #media-session.enable = true;
+  };
+
+  services.openssh.enable = false;
+
+  users = {
+    mutableUsers = false;
+    users = {
+      root = {
+        initialHashedPassword = "${ROOT_PASSWORD_HASH}";
+      };
+
+      ${USER_NAME} = {
+        isNormalUser = true;
+        createHome = true;
+        initialHashedPassword = "${USER_PASSWORD_HASH}";
+	extraGroups = [ "wheel" "networkmanager" ];
+	uid = 1000;
+	home = "/home/${USER_NAME}";
+	useDefaultShell = true;
+        packages = with pkgs; [
+          firefox
+        ];
+      };
+    };
+  };
+
+  nixpkgs.config.allowUnfree = true;
+
+  security.sudo.wheelNeedsPassword = false;
+
+  # This value determines the NixOS release from which the default
+  # settings for stateful data, like file locations and database versions
+  # on your system were taken. It‘s perfectly fine and recommended to leave
+  # this value at the release version of the first install of this system.
+  # Before changing this value read the documentation for this option
+  # (e.g. man configuration.nix or on https://nixos.org/nixos/options.html).
+  system.stateVersion = "unstable";
+
+  nix.settings.experimental-features = [ "nix-command" "flakes" ];
+  nix.settings.auto-optimise-store = true;
+
+  system.autoUpgrade.enable = true;
+  hardware.enableAllFirmware = true;
+  hardware.opengl.enable = true;
+  hardware.opengl.driSupport = true;
+
+  systemd.services.i2c_unbind = {
+    script = ''
+      /run/current-system/sw/bin/sh -c "echo AMDI0010:01 > /sys/bus/platform/drivers/i2c_designware/unbind"
+    '';
+    wantedBy = [ "multi-user.target" ];
+  };
+
+
+  systemd.services.card0_high = {
+    script = ''
+      /run/current-system/sw/bin/sh -c "echo high > /sys/class/drm/card0/device/power_dpm_force_performance_level"
+    '';
+    wantedBy = [ "multi-user.target" ];
+  };
+
+  # Automatic Garbage Collection
+  nix.gc = {
+    automatic = true;
+    dates = "weekly";
+    options = "--delete-older-than 7d";
+  };
+
+}
+EOF
+
+info "Installing NixOS to /mnt ..."
+ln -s /mnt/persist/etc/nixos/configuration.nix /mnt/etc/nixos/configuration.nix
+nixos-install -I "nixos-config=/mnt/persist/etc/nixos/configuration.nix" --no-root-passwd  # already prompted for and configured password

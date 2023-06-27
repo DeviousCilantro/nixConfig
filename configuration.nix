@@ -18,15 +18,23 @@
       systemd-boot.enable = true;
       efi.canTouchEfiVariables = true;
     };
-    initrd.postDeviceCommands = lib.mkAfter ''
-      zfs rollback -r rpool/encrypted/local/root@blank
-    '';
-    kernelParams = [ "elevator=none" ];
+    kernelPatches = [
+      {
+        name = "Fix keyboard issue";
+        patch = ./keyboard.patch;
+      }
+    ];
+    kernelPackages = pkgs.linuxPackages_latest;
+    kernelParams = [ "amdgpu.dcdebugmask=0x10" ];
   };
 
+  boot.initrd.postDeviceCommands = lib.mkAfter ''
+    zfs rollback -r rpool/encrypted/local/root@blank
+  '';
+
   networking = {
-    hostId = "10704779";
-    hostName = "laptop";
+    hostId = "0eedebe6";
+    hostName = "nixos";
     networkmanager.enable = true;
     firewall = {
       enable = false;
@@ -34,16 +42,7 @@
     };
   };
 
-  hardware = {
-    pulseaudio.enable = false;
-    opengl = {
-      enable = true;
-      driSupport = true;
-    };
-    enableRedistributableFirmware = true;
-  };
-
-  environment = { 
+  environment = {
     systemPackages = with pkgs; [
       autoconf
       autotiling-rs
@@ -64,6 +63,7 @@
       gcc
       git
       gnome3.adwaita-icon-theme
+      gnome.gnome-terminal
       gnupg
       go
       grim
@@ -73,7 +73,6 @@
       neofetch
       neovim
       nodejs_20
-      nvi
       obs-studio
       oh-my-zsh
       om4
@@ -83,6 +82,7 @@
       pass-wayland
       passExtensions.pass-import
       pavucontrol
+      pciutils
       pkgconfig
       playerctl
       powertop
@@ -118,20 +118,48 @@
         "/etc/modprobe.d"
       ];
     };
-    binsh = "${pkgs.dash}/bin/dash";
     sessionVariables = {
-      MOZ_ENABLE_WAYLAND = "1";
-      XDG_CURRENT_DESKTOP = "sway"; 
+      #DRI_PRIME = "1";
       GTK_THEME = "Adwaita:dark";
     };
     pathsToLink = [ "/share/zsh" ];
   };
-   
-  fonts.fonts = with pkgs; [
-    (nerdfonts.override { fonts = [ "JetBrainsMono" ]; })
-    noto-fonts
-    noto-fonts-cjk
-  ];
+
+  fonts.fonts = with pkgs;
+    [
+     (nerdfonts.override { fonts = [ "JetBrainsMono" ]; })
+      noto-fonts
+      noto-fonts-cjk
+      noto-fonts-emoji
+    ];
+
+  time.timeZone = "Asia/Kolkata";
+
+  i18n.defaultLocale = "en_US.UTF-8";
+
+  programs = {
+    sway.enable = true;
+    zsh.enable = true;
+  };
+
+  hardware = {
+    pulseaudio.enable = false;
+    opengl = {
+      enable = true;
+      driSupport = true;
+    };
+    enableRedistributableFirmware = true;
+    firmware = [
+      (pkgs.stdenvNoCC.mkDerivation {
+        name = "amdgpu-firmware";
+        buildCommand = ''
+          dir="$out/lib/firmware"
+          mkdir -p "$dir"
+	        cp -r ${./firmware}/* "$dir"
+        '';
+      })
+    ];
+  };
 
   services = {
     zfs = {
@@ -147,19 +175,7 @@
     openssh.enable = false;
     dbus.enable = true;
     logind.lidSwitch = "ignore";
-    xserver = {
-      enable = true;
-      displayManager.startx.enable = true;
-    };
-  };
-
-
-  time.timeZone = "Asia/Kolkata";
-  i18n.defaultLocale = "en_US.UTF-8";
-
-  programs = {
-    sway.enable = true;
-    zsh.enable = true;
+    fwupd.enable = true;
   };
 
   users = {
@@ -167,20 +183,22 @@
     mutableUsers = false;
     users = {
       root = {
-        initialHashedPassword = "\$6\$zAjyq6eGWNx2Gkc0\$niEesi37PrAacsn7.lee2WOYF7GMGI6y3rwsgPd2IqANqsC/rFIojGLj.Qncc6frzboFyhG6GEl/GEkk7f9xy0";
+        initialHashedPassword = "\$6\$dY7OmD3bWJdqojlJ\$.uvGugs/7ym9pZUOuJPBDBT.AEnsDA02psowaWRAYFwzJFDEVRwE9MGYV.dJOZcByWwmPqyjukbtg4ySRoGmf/";
       };
 
       archisman = {
         isNormalUser = true;
         createHome = true;
-        initialHashedPassword = "\$6\$yZm2shp6XSRMWUlm\$KiQ6p7km4IdwRE.btTQPI30QkCGwbQPJel46jwmSdyj5stRsCP2RVC73wL5NY8qLg0HMeTHDQ.Hze0MjmpAhA0";
-	    extraGroups = [ "wheel" "networkmanager" "docker" ];
-	    uid = 1000;
-	    home = "/home/archisman";
-	    useDefaultShell = true;
+        initialHashedPassword = "\$6\$kWDMWmDB.muf76rU\$o0lVGmABk2GIz08bU9WWd5/BHM3KIJ0m6yQKFQq.n7AODqreySS34JIqNEO7tLx50DD9CROOAi4DS1hpxYUEm/";
+	extraGroups = [ "wheel" "networkmanager" ];
+	uid = 1000;
+	home = "/home/archisman";
+	useDefaultShell = true;
       };
     };
   };
+
+  nixpkgs.config.allowUnfree = true;
 
   security = {
     doas.enable = true;
@@ -199,17 +217,21 @@
     autoUpgrade.enable = true;
   };
 
-  systemd = {
-    services = {
-      NetworkManager-wait-online.enable = false;
-    };
-  };
-
   nix = {
     settings = {
       experimental-features = [ "nix-command" "flakes" ];
       auto-optimise-store = true;
     };
+  };
+
+  systemd.services = {
+    i2c_unbind = {
+      script = ''
+        /run/current-system/sw/bin/sh -c "echo AMDI0010:01 > /sys/bus/platform/drivers/i2c_designware/unbind"
+      '';
+      wantedBy = [ "multi-user.target" ];
+    };
+    NetworkManager-wait-online.enable = false;
   };
 
   powerManagement = {
@@ -218,18 +240,27 @@
     cpuFreqGovernor = "schedutil";
   };
 
-  virtualisation.docker.enable = true;
-  
+  services.udev.extraRules = ''
+    KERNEL=="card0", SUBSYSTEM=="drm", DRIVERS=="amdgpu", ATTR{device/power_dpm_force_performance_level}="low"
+  '';
+
+  nixpkgs.config.packageOverrides = pkgs: {
+    nur = import (builtins.fetchTarball "https://github.com/nix-community/NUR/archive/master.tar.gz") {
+      inherit pkgs;
+    };
+  };
+
   xdg.portal = {
     enable = true;
     wlr.enable = true;
     extraPortals = [ pkgs.xdg-desktop-portal-gtk ];
   };
 
-  nixpkgs.config.packageOverrides = pkgs: {
-    nur = import (builtins.fetchTarball "https://github.com/nix-community/NUR/archive/master.tar.gz") {
-      inherit pkgs;
-    };
+  # Automatic Garbage Collection
+  nix.gc = {
+    automatic = true;
+    dates = "weekly";
+    options = "--delete-older-than 7d";
   };
 
 }
